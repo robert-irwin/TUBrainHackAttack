@@ -6,7 +6,7 @@ Created on Sep 23, 2016
 
 import serial
 
-class CommWithCar(object):
+class CommWithArduino(object):
     
     BAUD_RATE = 9600
     MAX_SIZE = 8
@@ -23,6 +23,8 @@ class CommWithCar(object):
     MOTORS_OUT_MAX = 128
     MOTORS_IN_MIN = -1
     MOTORS_IN_MAX = 1
+    MOTORS_LEFT_DIR = 1
+    MOTORS_RIGHT_DIR = 1
     MOTORS_MAP_M = (MOTORS_OUT_MAX-MOTORS_OUT_MIN)/(MOTORS_IN_MAX-MOTORS_IN_MIN)
     MOTORS_MAP_C = MOTORS_OUT_MIN-MOTORS_MAP_M*MOTORS_IN_MIN
 
@@ -31,7 +33,7 @@ class CommWithCar(object):
         assert(isinstance(comport,int))
         
         self.ser = serial.Serial(port='COM' + repr(comport),
-             baudrate=CommWithCar.BAUD_RATE,
+             baudrate=CommWithArduino.BAUD_RATE,
              parity=serial.PARITY_NONE,
              stopbits=serial.STOPBITS_ONE,
              timeout=None)
@@ -39,13 +41,13 @@ class CommWithCar(object):
     def send(self,data):
         
         assert(isinstance(data,bytearray))
-        size = CommWithCar.CONTROL_SIZE+len(data)
-        assert(size<=CommWithCar.MAX_SIZE)
+        size = CommWithArduino.CONTROL_SIZE+len(data)
+        assert(size<=CommWithArduino.MAX_SIZE)
         packet = bytearray()
-        packet.append(CommWithCar.START_BYTE)
+        packet.append(CommWithArduino.START_BYTE)
         packet.append(size)
         for b in data: packet.append(b)
-        packet.append(CommWithCar.END_BYTE)
+        packet.append(CommWithArduino.END_BYTE)
         self.ser.write(packet)
         
     def setMotors(self,left,right):
@@ -55,13 +57,15 @@ class CommWithCar(object):
         assert((left>=-1.0)and(left<=1.0))
         assert((right>=-1.0)and(right<=1.0))
         
-        m = CommWithCar.MOTORS_MAP_M
-        c = CommWithCar.MOTORS_MAP_C
+        left *= CommWithArduino.MOTORS_LEFT_DIR
+        right *= CommWithArduino.MOTORS_RIGHT_DIR
+        m = CommWithArduino.MOTORS_MAP_M
+        c = CommWithArduino.MOTORS_MAP_C
         left = int(left*m+c)
         right = int(right*m+c)
         
         payload = bytearray()
-        payload.append(CommWithCar.MOTORS_ID)
+        payload.append(CommWithArduino.MOTORS_ID)
         payload.append(left)
         payload.append(right)
         
