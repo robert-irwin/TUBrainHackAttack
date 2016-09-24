@@ -14,6 +14,7 @@ class CommWithArduino(object):
     START_BYTE = 12
     START_LOC = 0
     SIZE_LOC = 1
+    DATA_LOC = 2
     END_BYTE = 52
     
     PAYLOAD_ID_LOC = 0
@@ -32,11 +33,13 @@ class CommWithArduino(object):
         
         assert(isinstance(comport,int))
         
+        self.packet = bytearray()
+        
         self.ser = serial.Serial(port='COM' + repr(comport),
              baudrate=CommWithArduino.BAUD_RATE,
              parity=serial.PARITY_NONE,
              stopbits=serial.STOPBITS_ONE,
-             timeout=None)
+             timeout=0)
         
     def send(self,data):
         
@@ -70,6 +73,30 @@ class CommWithArduino(object):
         payload.append(right)
         
         self.send(payload)
+        
+    def receive(self):
+        
+        b = self.ser.read()
+        while len(b)>0:
+            packetlen = len(self.packet)
+            if (packetlen==CommWithArduino.START_LOC):
+                self.packet.append(b)
+            elif (packetlen==CommWithArduino.SIZE_LOC):
+                if (b>CommWithArduino.MAX_SIZE):
+                    self.packet = bytearray()
+                else:
+                    self.size = b;
+                    self.packet.append(b)
+            elif ((packetlen==(self.size-1))and(b==CommWithArduino.END_BYTE)):
+                data = self.packet[CommWithArduino.DATA_LOC:self.size-1];
+                self.packet = bytearray()
+                return data
+            elif (packetlen>CommWithArduino.MAX_SIZE):
+                self.packet = bytearray()
+            else:
+                self.packet.append(b)
+            b = self.ser.read()
+        return None
         
     def __del__(self):
         
