@@ -5,20 +5,13 @@
  *      Author: robertirwin
  */
 
-
-/*
- * main.c
- *
- *  Created on: Sep 24, 2016
- *      Author: robertirwin
- */
-
 # include	<avr/io.h>
 # include	<avr/interrupt.h>
 # include	<stdint.h>
 
-int main(void)
+bool UARTRead(uint8_t * data)
 {
+  /*
 	// Initialize the UART
 	//
 	char data;
@@ -38,9 +31,11 @@ int main(void)
 
 	// Check for Data
 	//
+	*/
 	if ((UCSR0A & (1 << RXC0)))
 	{
-		data = UDR0;
+		*data = UDR0;
+                return(1);
 	}
-	return(0);
+	else return(0);
 }
