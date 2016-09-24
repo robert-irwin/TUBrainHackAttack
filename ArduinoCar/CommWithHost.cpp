@@ -85,7 +85,7 @@ bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right )
 	
 	if ( ptr->ready[ COMM_WITH_HOST_MOTORS_ID ]==true )
 	{
-		ptr->ready[ COMM_WITH_HOST_MOTORS_ID ]==false;
+		ptr->ready[ COMM_WITH_HOST_MOTORS_ID ]=false;
 		*left = ptr->slots[ COMM_WITH_HOST_MOTORS_ID ][ COMM_WITH_HOST_MOTORS_LEFT_LOC ];
 		*right = ptr->slots[ COMM_WITH_HOST_MOTORS_ID ][ COMM_WITH_HOST_MOTORS_RIGHT_LOC ];
 		return true;
