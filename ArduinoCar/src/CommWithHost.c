@@ -17,11 +17,12 @@ static bool CommWithHostFillSlot( CommWithHost* ptr )
 	return false;
 }
 
-void CommWithHostSetup( CommWithHost* ptr, CommWithHostReadType* read )
+void CommWithHostSetup( CommWithHost* ptr, CommWithHostReadType* read, CommWithHostWriteType* write )
 {
 	ptr->curr = 0;
 	ptr->size = 0;
 	ptr->read = read;
+	ptr->write = write;
 	memset( ptr->slots, 0, sizeof( ptr->slots ) );
 	memset( ptr->ready, 0, sizeof( ptr->ready) );
 }
@@ -32,6 +33,9 @@ bool CommWithHostReceive( CommWithHost* ptr, uint8_t** data, size_t* len )
 	uint8_t b;
 	
 	read = ptr->read;
+	if ( read==NULL )
+		return false;
+	
 	while ( read( &b ) )
 	{
 		switch ( ptr->curr )
@@ -77,6 +81,20 @@ bool CommWithHostReceive( CommWithHost* ptr, uint8_t** data, size_t* len )
 	}
 	
 	return false;
+}
+
+void CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len )
+{
+	CommWithHostWriteType* write = ptr->write;
+	uint8_t each_byte = 0;
+	
+	if ( write==NULL )
+		return false;
+	write( COMM_WITH_HOST_START_BYTE );
+	write( COMM_WITH_HOST_CONTROL_SIZE+len );
+	for ( each_byte=0; each_byte<len; each_byte++ )
+		write( data[ each_byte ] );
+	write( COMM_WITH_HOST_END_BYTE );
 }
 
 bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right )

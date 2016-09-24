@@ -29,6 +29,7 @@ extern "C"
 #endif
 
 	typedef bool (CommWithHostReadType)( uint8_t* input );
+	typedef void (CommWithHostWriteType) ( uint8_t output );
 
 	typedef struct
 	{
@@ -38,12 +39,14 @@ extern "C"
 		uint8_t curr;
 		uint8_t size;
 		CommWithHostReadType* read;
+		CommWithHostWriteType* write;
 	}
 	CommWithHost;
 
-	void CommWithHostSetup( CommWithHost* ptr, CommWithHostReadType* read );
+	void CommWithHostSetup( CommWithHost* ptr, CommWithHostReadType* read, CommWithHostWriteType* write );
 	bool CommWithHostReceive( CommWithHost* ptr, uint8_t** data, size_t* len );
 	bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right );
+	void CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len );
 
 #ifdef __cplusplus
 }
