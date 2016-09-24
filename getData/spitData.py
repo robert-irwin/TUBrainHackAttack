@@ -4,124 +4,135 @@ import platform
 import time
 import math
 import matplotlib.pyplot as plt
-import ctypes
-
-if sys.platform.startswith('win32'):
-    import msvcrt
-elif sys.platform.startswith('linux'):
-    import atexit
-    from select import select
-
 from array import *
 from ctypes import *
 from __builtin__ import exit
 
-try:
-    if sys.platform.startswith('win32'):
-        libEDK = cdll.LoadLibrary("bin/win64/edk.dll")
-    elif sys.platform.startswith('linux'):
-        srcDir = os.getcwd()
-	if platform.machine().startswith('arm'):
-            libPath = srcDir + "bin/armhf/libedk.so"
-	else:
-            libPath = srcDir + "bin/linux64/libedk.so"
-        libEDK = CDLL(libPath)
-    else:
-        raise Exception('System not supported.')
-except Exception as e:
-    print 'Error: cannot load EDK lib:', e
-    exit()
-
-IEE_EmoEngineEventCreate = libEDK.IEE_EmoEngineEventCreate
-IEE_EmoEngineEventCreate.restype = c_void_p
-eEvent = IEE_EmoEngineEventCreate()
-
-IEE_EmoEngineEventGetEmoState = libEDK.IEE_EmoEngineEventGetEmoState
-IEE_EmoEngineEventGetEmoState.argtypes = [c_void_p, c_void_p]
-IEE_EmoEngineEventGetEmoState.restype = c_int
-
-IEE_EmoStateCreate = libEDK.IEE_EmoStateCreate
-IEE_EmoStateCreate.restype = c_void_p
-eState = IEE_EmoStateCreate()
-
-userID = c_uint(0)
-user   = pointer(userID)
-ready  = 0
-state  = c_int(0)
-
-alphaValue     = c_double(0)
-low_betaValue  = c_double(0)
-high_betaValue = c_double(0)
-gammaValue     = c_double(0)
-thetaValue     = c_double(0)
-
-alpha     = pointer(alphaValue)
-low_beta  = pointer(low_betaValue)
-high_beta = pointer(high_betaValue)
-gamma     = pointer(gammaValue)
-theta     = pointer(thetaValue)
-
-channelList = array('I',[3, 7, 9, 12, 16])   # IED_AF3, IED_AF4, IED_T7, IED_T8, IED_Pz 
-
-# -------------------------------------------------------------------------
-print "==================================================================="
-print "Example to get the average band power for a specific channel from" \
-" the latest epoch."
-print "==================================================================="
-
-# -------------------------------------------------------------------------
-if libEDK.IEE_EngineConnect("Emotiv Systems-5") != 0:
-        print "Emotiv Engine start up failed."
-        exit();
-
-header = "Channel, Theta, Alpha, Low_beta, High_beta, Gamma \n"
-# print header
-
-f = file('spitData.csv','w')
-f = open('spitData.csv','w')
-
-plt.ion()
-ln, = plt.plot([])
-plotArray = []
-print >> f, header
-
-while (1):
+class spitData:
+    """This class makes Andrew happy because its the right way to code """
     
-    state = libEDK.IEE_EngineGetNextEvent(eEvent)
+    def __init__(self):
+        if sys.platform.startswith('win32'):
+                import msvcrt
+        elif sys.platform.startswith('linux'):
+                import atexit
+                from select import select
+                
+        try:
+            if sys.platform.startswith('win32'):
+                self.libEDK = cdll.LoadLibrary("bin/win64/edk.dll")
+            elif sys.platform.startswith('linux'):
+                srcDir = os.getcwd()
+                if platform.machine().startswith('arm'):
+                    self.libPath = srcDir + "bin/armhf/libedk.so"
+                else:
+                    self.libPath = srcDir + "bin/linux64/libedk.so"
+                self.libEDK = CDLL(self.libPath)
+            else:
+                raise Exception('System not supported.')
+        except Exception as e:
+            print 'Error: cannot load EDK lib:', e
+            exit()
+            
+        self.userID = c_uint(0)
+        self.user   = pointer(self.userID)
+        self.ready  = 0
+        self.state  = c_int(0)
+
+        self.alphaValue     = c_double(0)
+        self.low_betaValue  = c_double(0)
+        self.high_betaValue = c_double(0)
+        self.gammaValue     = c_double(0)
+        self.thetaValue     = c_double(0)
+
+        self.alpha     = pointer(self.alphaValue)
+        self.low_beta  = pointer(self.low_betaValue)
+        self.high_beta = pointer(self.high_betaValue)
+        self.gamma     = pointer(self.gammaValue)
+        self.theta     = pointer(self.thetaValue)
+
+        self.channelList = array('I',[3, 7, 9, 12, 16])   # IED_AF3, IED_AF4, IED_T7, IED_T8, IED_Pz 
+            
+    def link(self):
+        IEE_EmoEngineEventCreate = self.libEDK.IEE_EmoEngineEventCreate
+        IEE_EmoEngineEventCreate.restype = c_void_p
+        self.eEvent = IEE_EmoEngineEventCreate()
+
+        IEE_EmoEngineEventGetEmoState = self.libEDK.IEE_EmoEngineEventGetEmoState
+        IEE_EmoEngineEventGetEmoState.argtypes = [c_void_p, c_void_p]
+        IEE_EmoEngineEventGetEmoState.restype = c_int
+
+        IEE_EmoStateCreate = self.libEDK.IEE_EmoStateCreate
+        IEE_EmoStateCreate.restype = c_void_p
+        self.eState = IEE_EmoStateCreate()
+
+        if self.libEDK.IEE_EngineConnect("Emotiv Systems-5") != 0:
+            print "Emotiv Engine start up failed."
+            exit();
+        else:
+            print "Emotiv Engine started up correctly"
+        
+    def openFile(self,fileName):
+        self.fileName = fileName
+        self.header = "Channel, Theta, Alpha, Low_beta, High_beta, Gamma \n"
+        self.f = file(self.fileName,'w')
+        self.f = open(self.fileName,'w')
+        print >> self.f, self.header
+        
+    def closeFile(self):
+        self.f.close()
+        
+    def writePlot(self):
+        plt.ion()
+        self.ln, = plt.plot([])
+        
+        if( (len(self.plotArray) % 5) == 0 ):
+            plt.gcf().clear()
+            zulu = plt.plot(self.plotArray[-40:])
+            plt.legend(zulu,('theta','alpha','lowB','highB','gamma'))
+            plt.pause(0.001)
+            print "plot now"  
     
-    if state == 0:
-        eventType = libEDK.IEE_EmoEngineEventGetType(eEvent)
-        libEDK.IEE_EmoEngineEventGetUserId(eEvent, user)
-        if eventType == 16:  # libEDK.IEE_Event_enum.IEE_UserAdded
-            ready = 1
-            libEDK.IEE_FFTSetWindowingType(userID, 1);  # 1: libEDK.IEE_WindowingTypes_enum.IEE_HAMMING
-            print "User added"
+    def collectData(self, channel):
+        self.channel = channel
+        self.plotArray = []
+    
+        self.state = self.libEDK.IEE_EngineGetNextEvent(self.eEvent)
+    
+        if self.state == 0:
+            eventType = self.libEDK.IEE_EmoEngineEventGetType(self.eEvent)
+            self.libEDK.IEE_EmoEngineEventGetUserId(self.eEvent, self.user)
+            if eventType == 16:  # libEDK.IEE_Event_enum.IEE_UserAdded
+                ready = 1
+                self.libEDK.IEE_FFTSetWindowingType(self.userID, 1);  # 1: libEDK.IEE_WindowingTypes_enum.IEE_HAMMING
+                print "User added"
                         
-        if ready == 1:
-            for i in channelList: 
-                result = c_int(0)
-                result = libEDK.IEE_GetAverageBandPowers(userID, i, theta, alpha, low_beta, high_beta, gamma)
+            if ready == 1:
+                for i in self.channelList: 
+                    result = c_int(0)
+                    result = self.libEDK.IEE_GetAverageBandPowers(self.userID, i, self.theta, self.alpha, self.low_beta, self.high_beta, self.gamma)
     
-                if result == 0:    #EDK_OK
-                   #  print "%d, %.6f, %.6f, %.6f, %.6f, %.6f \n" % (i, thetaValue.value, alphaValue.value, 
-                   #     low_betaValue.value, high_betaValue.value, gammaValue.value)
-                    print >> f, "%d, %.6f, %.6f, %.6f, %.6f, %.6f" % (i, thetaValue.value, alphaValue.value, 
-                        low_betaValue.value, high_betaValue.value, gammaValue.value)
-                    if i == 3:
-                        plotArray.append([math.log10(thetaValue.value),math.log10(alphaValue.value),math.log10(low_betaValue.value),
-                                          math.log10(high_betaValue.value),math.log10(gammaValue.value)])
-                        if( (len(plotArray) % 5) == 0 ):
-                            plt.gcf().clear()
-                            zulu = plt.plot(plotArray[-40:])
-                            plt.legend(zulu,('theta','alpha','lowB','highB','gamma'))
-                            plt.pause(0.001)
-                            print "plot now"         
-                elif state != 0x0600:
+                    if result == 0:    #EDK_OK
+                        #  print "%d, %.6f, %.6f, %.6f, %.6f, %.6f \n" % (i, thetaValue.value, alphaValue.value, 
+                        #     low_betaValue.value, high_betaValue.value, gammaValue.value)
+                        print >> self.f, "%d, %.6f, %.6f, %.6f, %.6f, %.6f" % (i, self.thetaValue.value, self.alphaValue.value, 
+                                                                          self.low_betaValue.value, self.high_betaValue.value, self.gammaValue.value)
+                        if i == channel:
+                            self.plotArray.append([math.log10(self.thetaValue.value),math.log10(self.alphaValue.value),math.log10(self.low_betaValue.value),
+                                              math.log10(self.high_betaValue.value),math.log10(self.gammaValue.value)])       
+        elif self.state != 0x0600:
                     print "Internal error in Emotiv Engine ! "
         time.sleep(0.001)
-        print str(plotArray[-10:]).strip('[]')
-f.close()    
-# -------------------------------------------------------------------------
-libEDK.IEE_EngineDisconnect()
-libEDK.IEE_EmoStateFree(eState)
-libEDK.IEE_EmoEngineEventFree(eEvent)
+        print str(self.plotArray[-10:]).strip('[]')
+        
+        return self.plotArray
+        
+    def closeConnection(self):
+        self.libEDK.IEE_EngineDisconnect()
+        self.libEDK.IEE_EmoStateFree(self.eState)
+        self.libEDK.IEE_EmoEngineEventFree(self.eEvent)
+        
+    def channelBand(self,channel,band):
+        data = self.collectData(channel)
+        chosenData = data[band]
+        return(chosenData)
