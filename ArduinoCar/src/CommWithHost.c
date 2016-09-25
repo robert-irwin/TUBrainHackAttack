@@ -83,7 +83,7 @@ bool CommWithHostReceive( CommWithHost* ptr, uint8_t** data, size_t* len )
 	return false;
 }
 
-void CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len )
+bool CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len )
 {
 	CommWithHostWriteType* write = ptr->write;
 	uint8_t each_byte = 0;
@@ -95,6 +95,7 @@ void CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len )
 	for ( each_byte=0; each_byte<len; each_byte++ )
 		write( data[ each_byte ] );
 	write( COMM_WITH_HOST_END_BYTE );
+	return true;
 }
 
 bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right )
@@ -109,4 +110,13 @@ bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right )
 		return true;
 	}
 	return false;
+}
+
+void CommWithHostSetMuscles( CommWithHost* ptr, uint16_t left, uint16_t right )
+{
+	uint8_t payload[ COMM_WITH_HOST_MUSCLES_SIZE ];
+	payload[ COMM_WITH_HOST_PAYLOAD_LOC ] = COMM_WITH_HOST_MUSCLES_ID;
+	memcpy( &payload[ COMM_WITH_HOST_MUSCLES_LEFT_LOC ], &left, sizeof( left ) );
+	memcpy( &payload[ COMM_WITH_HOST_MUSCLES_RIGHT_LOC ], &right, sizeof( right ) );
+	CommWithHostSend( ptr, payload, sizeof( payload ) );
 }
