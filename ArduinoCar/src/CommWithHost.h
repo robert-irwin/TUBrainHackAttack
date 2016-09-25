@@ -17,7 +17,12 @@
 #define COMM_WITH_HOST_MOTORS_LEFT_LOC	( 1 )
 #define COMM_WITH_HOST_MOTORS_RIGHT_LOC	( 2 )
 
-#define COMM_WITH_HOST_SLOTS_TOTAL		( 1 )
+#define COMM_WITH_HOST_MUSCLES_ID		( 1 )
+#define COMM_WITH_HOST_MUSCLES_LEFT_LOC	( 1 )
+#define COMM_WITH_HOST_MUSCLES_RIGHT_LOC ( 3 )
+#define COMM_WITH_HOST_MUSCLES_SIZE		( 5 )
+
+#define COMM_WITH_HOST_SLOTS_TOTAL		( 2 )
 
 #include <stdint.h>
 #include <string.h>
@@ -46,7 +51,8 @@ extern "C"
 	void CommWithHostSetup( CommWithHost* ptr, CommWithHostReadType* read, CommWithHostWriteType* write );
 	bool CommWithHostReceive( CommWithHost* ptr, uint8_t** data, size_t* len );
 	bool CommWithHostGetMotors( CommWithHost* ptr, uint8_t* left, uint8_t* right );
-	void CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len );
+	bool CommWithHostSend( CommWithHost* ptr, uint8_t* data, size_t len );
+	void CommWithHostSetMuscles( CommWithHost* ptr, uint16_t left, uint16_t right );
 
 #ifdef __cplusplus
 }

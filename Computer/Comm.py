@@ -18,6 +18,7 @@ class CommWithArduino(object):
     END_BYTE = 52
     
     PAYLOAD_ID_LOC = 0
+    SLOTS_TOTAL = 2
     
     MOTORS_ID = 0
     MOTORS_OUT_MIN = 64
@@ -28,18 +29,24 @@ class CommWithArduino(object):
     MOTORS_RIGHT_DIR = 1
     MOTORS_MAP_M = (MOTORS_OUT_MAX-MOTORS_OUT_MIN)/(MOTORS_IN_MAX-MOTORS_IN_MIN)
     MOTORS_MAP_C = MOTORS_OUT_MIN-MOTORS_MAP_M*MOTORS_IN_MIN
+    
+    MUSCLES_ID = 1
+    MUSCLES_LEFT_LOC = 1 
+    MUSCLES_RIGHT_LOC = 3
+    MUSCLES_TOTAL = 5
 
-    def __init__(self,comport):
+    def __init__(self,comport,baudrate=BAUD_RATE):
         
         assert(isinstance(comport,int))
         
         self.packet = bytearray()
+        self.slots = [None]*CommWithArduino.SLOTS_TOTAL
         
         self.ser = serial.Serial(port='COM' + repr(comport),
-             baudrate=CommWithArduino.BAUD_RATE,
+             baudrate=baudrate,
              parity=serial.PARITY_NONE,
              stopbits=serial.STOPBITS_ONE,
-             timeout=0)
+             timeout=None)
         
     def send(self,data):
         
@@ -78,6 +85,7 @@ class CommWithArduino(object):
         
         b = self.ser.read()
         while len(b)>0:
+            b = int(bytearray(b)[0])
             packetlen = len(self.packet)
             if (packetlen==CommWithArduino.START_LOC):
                 self.packet.append(b)
@@ -96,6 +104,26 @@ class CommWithArduino(object):
             else:
                 self.packet.append(b)
             b = self.ser.read()
+        return None
+    
+    def fillSlot(self):
+        
+        data = self.receive()
+        if data!=None:
+            iden = data[CommWithArduino.PAYLOAD_ID_LOC]
+            if (iden<CommWithArduino.SLOTS_TOTAL):
+                self.slots[iden] = data
+                return True
+        return False
+    
+    def getMuscles(self):
+        self.fillSlot()
+        payload = self.slots[CommWithArduino.MUSCLES_ID]
+        if (payload!=None):
+            left = payload[ 2 ] | payload[ 1 ]
+            right = payload[ 4 ] | payload[ 3 ]
+            payload = None
+            return (left,right)
         return None
         
     def __del__(self):
