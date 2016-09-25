@@ -125,10 +125,11 @@ class spitData:
                 #                                                          self.low_betaValue.value, self.high_betaValue.value, self.gammaValue.value)
                 if i == channel:
                     # print "channel match"
-                    self.plotArray.append([math.log10(self.thetaValue.value),math.log10(self.alphaValue.value),math.log10(self.low_betaValue.value),
-                                              math.log10(self.high_betaValue.value),math.log10(self.gammaValue.value)])       
-                    print str(self.plotArray[-10:]).strip('[]')
-                    return self.plotArray[channelMap[i]]
+                    self.plotArray.append([self.thetaValue.value,self.alphaValue.value,self.low_betaValue.value,
+                                            self.high_betaValue.value,self.gammaValue.value])       
+                    # print str(self.plotArray[-10:]).strip('[]')
+                    # print 'channelMap: %d plotArray %d' % ( channelMap[i], len(self.plotArray[-1]) )
+                    return self.plotArray
         
     def closeConnection(self):
         self.libEDK.IEE_EngineDisconnect()
@@ -142,5 +143,9 @@ class spitData:
             return -1
         else:
             # print 'band value: %d' % (band)
-            chosenData = data[band-1]
+            chosenData = data[-1][band-1]
             return(chosenData)
+        
+    def moveTheCar(self,channel,band):
+        pedal = self.channelBand(channel,band)
+        return int( (pedal/100) ) 

@@ -3,7 +3,7 @@ Created on Sep 24, 2016
 
 @author: NIL
 '''
-
+import time
 import spitData
 
 zulu = spitData.spitData()
@@ -28,7 +28,8 @@ print str(sensorArray[-10:]).strip('[]')
 print "%.6f" % (zulu.channelBand(channel, band))
 
 while 1:
-    channel = eval(raw_input('Pick a channel!'))
-    band = eval(raw_input('Pick a band!'))
-    print "%.6f" % (zulu.channelBand(channel, band))
+    value = zulu.channelBand(channel, band)
+    print "%.6f" % (value)
+    print "grumpy man: %d" % ( zulu.moveTheCar(channel, band) )
+    time.sleep(0.1)
     
