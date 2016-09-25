@@ -26,7 +26,7 @@ class CommWithArduino(object):
     MOTORS_IN_MIN = -1
     MOTORS_IN_MAX = 1
     MOTORS_LEFT_DIR = 1
-    MOTORS_RIGHT_DIR = 1
+    MOTORS_RIGHT_DIR = -1
     MOTORS_MAP_M = (MOTORS_OUT_MAX-MOTORS_OUT_MIN)/(MOTORS_IN_MAX-MOTORS_IN_MIN)
     MOTORS_MAP_C = MOTORS_OUT_MIN-MOTORS_MAP_M*MOTORS_IN_MIN
     
@@ -120,8 +120,8 @@ class CommWithArduino(object):
         self.fillSlot()
         payload = self.slots[CommWithArduino.MUSCLES_ID]
         if (payload!=None):
-            left = payload[ 2 ] | payload[ 1 ]
-            right = payload[ 4 ] | payload[ 3 ]
+            left = (payload[ 2 ] << 8) | payload[ 1 ]
+            right = (payload[ 4 ] << 8) | payload[ 3 ]
             payload = None
             return (left,right)
         return None
