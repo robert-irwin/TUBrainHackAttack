@@ -8,7 +8,7 @@ from Comm import CommWithArduino
 import time
 
 CAR_PORT_NUMBER = 7
-MUSCLE_PORT_NUMBER = 8
+MUSCLE_PORT_NUMBER = 5
 THRESHOLD = 512 
 WINDOW = 32
 leftcount = 0

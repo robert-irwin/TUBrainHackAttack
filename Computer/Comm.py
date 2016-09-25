@@ -74,6 +74,9 @@ class CommWithArduino(object):
         left = int(left*m+c)
         right = int(right*m+c)
         
+        if (left in range(90,100) ): left = 94
+        if (right in range(90,100) ): right = 94
+        
         payload = bytearray()
         payload.append(CommWithArduino.MOTORS_ID)
         payload.append(left)
