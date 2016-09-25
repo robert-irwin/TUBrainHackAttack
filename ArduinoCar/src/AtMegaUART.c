@@ -8,15 +8,23 @@
 # include	<avr/io.h>
 # include	<avr/interrupt.h>
 # include	<stdint.h>
+# include	<stdbool.h>
 
 bool UARTRead(uint8_t * data)
 {
-  /*
-	// Initialize the UART
-	//
-	char data;
-	// set baud rate
-	//
+
+	if ((UCSR0A & (1 << RXC0)))
+	{
+		*data = UDR0;
+                return(1);
+	}
+	else return(0);
+}
+
+void UART_INIT(void)
+{
+// set baud rate
+//
 	uint16_t ubrr = (16000000/16/9600) -1;
 	UBRR0H = (unsigned char)(ubrr >> 8);
 	UBRR0L = (unsigned char)ubrr;
@@ -28,14 +36,4 @@ bool UARTRead(uint8_t * data)
 	// Enable Receiver
 	//
 	UCSR0B = (1 << RXEN0);
-
-	// Check for Data
-	//
-	*/
-	if ((UCSR0A & (1 << RXC0)))
-	{
-		*data = UDR0;
-                return(1);
-	}
-	else return(0);
 }
