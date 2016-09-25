@@ -53,7 +53,7 @@ class spitData:
 
         self.channelList = array('I',[3, 7, 9, 12, 16])   # IED_AF3, IED_AF4, IED_T7, IED_T8, IED_Pz 
             
-    def link(self):
+    def openConnection(self):
         IEE_EmoEngineEventCreate = self.libEDK.IEE_EmoEngineEventCreate
         IEE_EmoEngineEventCreate.restype = c_void_p
         self.eEvent = IEE_EmoEngineEventCreate()
@@ -71,6 +71,8 @@ class spitData:
             exit();
         else:
             print "Emotiv Engine started up correctly"
+        
+        print "openConnection complete"
         
     def openFile(self,fileName):
         self.fileName = fileName
@@ -93,12 +95,9 @@ class spitData:
             plt.pause(0.001)
             print "plot now"  
     
-    def collectData(self, channel):
-        self.channel = channel
-        self.plotArray = []
-    
+    def linkUser(self):        
+        ready = 0
         self.state = self.libEDK.IEE_EngineGetNextEvent(self.eEvent)
-    
         if self.state == 0:
             eventType = self.libEDK.IEE_EmoEngineEventGetType(self.eEvent)
             self.libEDK.IEE_EmoEngineEventGetUserId(self.eEvent, self.user)
@@ -106,26 +105,30 @@ class spitData:
                 ready = 1
                 self.libEDK.IEE_FFTSetWindowingType(self.userID, 1);  # 1: libEDK.IEE_WindowingTypes_enum.IEE_HAMMING
                 print "User added"
-                        
-            if ready == 1:
-                for i in self.channelList: 
-                    result = c_int(0)
-                    result = self.libEDK.IEE_GetAverageBandPowers(self.userID, i, self.theta, self.alpha, self.low_beta, self.high_beta, self.gamma)
-    
-                    if result == 0:    #EDK_OK
-                        #  print "%d, %.6f, %.6f, %.6f, %.6f, %.6f \n" % (i, thetaValue.value, alphaValue.value, 
-                        #     low_betaValue.value, high_betaValue.value, gammaValue.value)
-                        print >> self.f, "%d, %.6f, %.6f, %.6f, %.6f, %.6f" % (i, self.thetaValue.value, self.alphaValue.value, 
-                                                                          self.low_betaValue.value, self.high_betaValue.value, self.gammaValue.value)
-                        if i == channel:
-                            self.plotArray.append([math.log10(self.thetaValue.value),math.log10(self.alphaValue.value),math.log10(self.low_betaValue.value),
-                                              math.log10(self.high_betaValue.value),math.log10(self.gammaValue.value)])       
         elif self.state != 0x0600:
-                    print "Internal error in Emotiv Engine ! "
-        time.sleep(0.001)
-        print str(self.plotArray[-10:]).strip('[]')
-        
-        return self.plotArray
+                print "Internal error in Emotiv Engine ! "
+        return ready
+                
+    def collectData(self,channel):
+        self.plotArray = []
+        channelMap = {3:0,7:1,9:2,12:3,16:4}
+        #p rint "channel target: %d" % (channel)                
+        for i in self.channelList: 
+            result = c_int(0)
+            result = self.libEDK.IEE_GetAverageBandPowers(self.userID, i, self.theta, self.alpha, self.low_beta, self.high_beta, self.gamma)
+            # print "channel loop: %d" % (i)
+            # print "lib result: %d" % (result)
+            if result == 0:    #EDK_OK
+                # print "%d, %.6f, %.6f, %.6f, %.6f, %.6f \n" % (i, self.thetaValue.value, self.alphaValue.value, 
+                #                                               self.low_betaValue.value, self.high_betaValue.value, self.gammaValue.value)
+                # print >> self.f, "%d, %.6f, %.6f, %.6f, %.6f, %.6f" % (i, self.thetaValue.value, self.alphaValue.value, 
+                #                                                          self.low_betaValue.value, self.high_betaValue.value, self.gammaValue.value)
+                if i == channel:
+                    # print "channel match"
+                    self.plotArray.append([math.log10(self.thetaValue.value),math.log10(self.alphaValue.value),math.log10(self.low_betaValue.value),
+                                              math.log10(self.high_betaValue.value),math.log10(self.gammaValue.value)])       
+                    print str(self.plotArray[-10:]).strip('[]')
+                    return self.plotArray[channelMap[i]]
         
     def closeConnection(self):
         self.libEDK.IEE_EngineDisconnect()
@@ -134,5 +137,10 @@ class spitData:
         
     def channelBand(self,channel,band):
         data = self.collectData(channel)
-        chosenData = data[band]
-        return(chosenData)
+        if not data:
+            print 'data is empty in channelBand'
+            return -1
+        else:
+            # print 'band value: %d' % (band)
+            chosenData = data[band-1]
+            return(chosenData)
